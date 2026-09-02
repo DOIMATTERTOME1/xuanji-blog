@@ -6,8 +6,8 @@ const SITE_LANG = "zh_CN"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
 export const siteConfig: SiteConfig = {
 	title: "Xuanji's Blog",
 	subtitle: "记录学习、科研、技术与生活",
-	// Vercel 首次部署后替换为实际公开网址，并保留末尾斜杠。
-	siteURL: "https://example.com/",
+	// Vercel 正式公开网址（保留末尾斜杠）。
+	siteURL: "https://xuanji-blog.vercel.app/",
 	keywords: [
 		"Xuanji",
 		"个人技术博客",
