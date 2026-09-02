@@ -1,49 +1,23 @@
 
-This website is built with the **Astro** framework using the [Mizuki](https://github.com/LyraVoid/Mizuki) theme.
+# 关于我
 
-::github{repo="LyraVoid/Mizuki"}
+你好，我是 **Xuanji**。
 
-## 🌟 Theme Features
+这里是我的个人技术博客，用来持续记录研究生阶段的学习、科研、技术实践与日常思考。我希望把零散的实验结果、推导过程和项目经验整理成能够复查、复现和长期积累的知识。
 
-### 🎨 Design & User Experience
-- **Modern & Elegant Design** - Clean, minimalist interface with beautiful typography
-- **Fully Responsive** - Optimized for all devices from mobile to desktop
-- **Dark/Light Mode** - Automatic theme switching with smooth transitions
-- **Beautiful Typography** - Enhanced readability with JetBrains Mono font
-- **Smooth Animations** - Fluid page transitions and interactive elements
+## 主要内容
 
-### 🔍 Content & Search
-- **Advanced Search** - Powered by [Pagefind](https://pagefind.app/) for fast, accurate results
-- **Enhanced Markdown** - Extended syntax with code highlighting and math support
-- **Interactive Table of Contents** - Auto-scroll navigation for long articles
-- **RSS Feed Generation** - Stay updated with automatic feed generation
-- **Reading Time Estimation** - Know how long articles take to read
-- **Post Categorization** - Organize content with tags and categories
+- 电力电子基础与工程实践
+- LLC 谐振变换器原理、软开关与 ZVS
+- MATLAB / Simulink 建模、仿真与控制
+- PCB 设计、KiCad 与打板记录
+- AI、编程和效率工具
+- 研究生学习记录与个人项目
 
+## 写作原则
 
+我会尽量记录问题背景、分析过程、关键参数和验证结果。尚未完成的项目会明确标注当前状态，不把计划写成成果。
 
-### 📱 Special Pages
-- **Anime Tracking Page** - Track your anime watching progress with ratings
-- **Friends Links Page** - Showcase friend websites with beautiful cards
-- **Diary/Moments Page** - Share life moments like social media posts
-- **Archive Page** - Organized timeline view of all posts
-- **About Page** - Customizable personal introduction (this page!)
+## 关于本站
 
-### 🛠 Technical Features
-- **Enhanced Code Blocks** - Powered by [Expressive Code](https://expressive-code.com/)
-- **Math Support** - LaTeX rendering with KaTeX for mathematical expressions
-- **Image Optimization** - PhotoSwipe gallery with lazy loading
-- **SEO Optimized** - Built-in sitemap and meta tags for better search visibility
-- **Performance Optimized** - Fast loading with caching and optimization
-- **Comment System Ready** - Integration support for Twikoo comments
-
-### 🎯 Advanced Markdown Features
-- **Callouts & Admonitions** - Beautiful info boxes with `> [!NOTE]`, `> [!TIP]`, `> [!WARNING]`
-- **Mathematical Equations** - Write LaTeX math with `$inline$` and `$$block$$` syntax
-- **GitHub Cards** - Embed repository cards with `::github{repo="user/repo"}`
-- **Syntax Highlighting** - Advanced code highlighting with line numbers
-- **Copy Code Buttons** - Easy code copying functionality
-
----
-
-*Built with ❤️ using Astro and inspired by modern web design principles.*
+本站使用 [Astro](https://astro.build/) 构建，并基于开源主题 [Mizuki](https://github.com/LyraVoid/Mizuki) 进行配置与内容定制。网站保留了响应式布局、深色模式、Markdown、数学公式、代码高亮、搜索、分类、标签与归档等能力。

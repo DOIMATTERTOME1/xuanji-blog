@@ -114,18 +114,21 @@ if (title) {
 }
 
 let ogImageUrl: string | undefined;
-if (siteConfig.generateOgImages && postSlug) {
-	ogImageUrl = new URL(`/og/${postSlug}.png`, Astro.site).toString();
+if (postSlug) {
+	if (siteConfig.generateOgImages) {
+		ogImageUrl = new URL(`/og/${postSlug}.png`, Astro.site).toString();
+	} else if (coverImage) {
+		// 文章有独立封面时使用文章封面；无封面时不继承站点分享图。
+		ogImageUrl = coverImage.startsWith("http")
+			? coverImage
+			: new URL(coverImage, Astro.site).toString();
+	}
 } else if (coverImage) {
-	// For post pages with cover images, use the resolved cover image
 	ogImageUrl = coverImage.startsWith("http")
 		? coverImage
 		: new URL(coverImage, Astro.site).toString();
-} else if (banner) {
-	// For others, use the first banner as OG image
-	ogImageUrl = banner.startsWith("http")
-		? banner
-		: new URL(banner, Astro.site).toString();
+} else {
+	ogImageUrl = new URL("/og.png", Astro.site).toString();
 }
 
 // const siteLang = siteConfig.lang.replace('_', '-')

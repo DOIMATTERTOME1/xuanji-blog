@@ -2,8 +2,8 @@ import Key from "../i18nKey";
 import type { Translation } from "../translation";
 
 export const zh_CN: Translation = {
-	[Key.home]: "主页",
-	[Key.about]: "关于我们",
+	[Key.home]: "首页",
+	[Key.about]: "关于",
 	[Key.archive]: "归档",
 	[Key.search]: "搜索",
 	[Key.other]: "其他",
@@ -137,13 +137,13 @@ export const zh_CN: Translation = {
 	[Key.devicesViewDetails]: "查看详情",
 
 	// 项目展示页面
-	[Key.projects]: "项目展示",
-	[Key.projectsSubtitle]: "我的开发项目作品集",
+	[Key.projects]: "项目",
+	[Key.projectsSubtitle]: "学习、仿真与工程实践",
 	[Key.projectsAll]: "全部",
 	[Key.projectsWeb]: "网页应用",
 	[Key.projectsMobile]: "移动应用",
 	[Key.projectsDesktop]: "桌面应用",
-	[Key.projectsOther]: "其他",
+	[Key.projectsOther]: "科研与工程",
 	[Key.projectTechStack]: "技术栈",
 	[Key.projectLiveDemo]: "在线演示",
 	[Key.projectSourceCode]: "源代码",
