@@ -1,0 +1,80 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getAdminIdentity } from "../../lib/admin/auth";
+import { isSupabaseConfigured } from "../../lib/supabase/config";
+
+export const prerender = false;
+
+const admin = await getAdminIdentity({
+	request: Astro.request,
+	cookies: Astro.cookies,
+});
+
+if (admin) {
+	return Astro.redirect("/admin/");
+}
+
+const errorCode = Astro.url.searchParams.get("error");
+const errorMessage =
+	errorCode === "invalid"
+		? "邮箱或密码不正确，请重新输入。"
+		: errorCode === "forbidden"
+			? "这个账号没有网站管理权限。"
+			: errorCode === "request"
+				? "登录请求已失效，请刷新页面重试。"
+				: "";
+---
+
+<AdminLayout title="管理员登录">
+	<main class="login-shell">
+		<section class="login-card">
+			<div class="brand-mark" aria-hidden="true">玄</div>
+			<p class="eyebrow">Xuanji's Blog</p>
+			<h1>网站管理后台</h1>
+			<p class="intro">登录后可以写文章、记录日记和装修网站。</p>
+
+			{
+				!isSupabaseConfigured ? (
+					<div class="setup-notice">
+						<strong>后台尚未连接</strong>
+						<span>请先完成一次数据服务配置。配置完成后，这里会显示安全登录表单。</span>
+					</div>
+				) : (
+					<form method="post" action="/api/admin/auth/login/">
+						{errorMessage && <p class="error-message">{errorMessage}</p>}
+						<label>
+							<span>管理员邮箱</span>
+							<input name="email" type="email" autocomplete="username" required placeholder="请输入邮箱" />
+						</label>
+						<label>
+							<span>登录密码</span>
+							<input name="password" type="password" autocomplete="current-password" required minlength="8" placeholder="请输入密码" />
+						</label>
+						<button type="submit">安全登录</button>
+					</form>
+				)
+			}
+
+			<a class="back-link" href="/">返回公开网站</a>
+		</section>
+	</main>
+</AdminLayout>
+
+<style>
+	.login-shell { min-height: 100vh; padding: 24px; display: grid; place-items: center; }
+	.login-card { width: min(100%, 430px); padding: 42px; border: 1px solid #e3e4ef; border-radius: 24px; background: rgba(255,255,255,.92); box-shadow: 0 24px 70px rgba(40,41,85,.12); text-align: center; }
+	.brand-mark { width: 60px; height: 60px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 18px; color: white; background: linear-gradient(135deg, #8183e8, #5658c9); box-shadow: 0 12px 26px rgba(86,88,201,.26); font-size: 25px; font-weight: 800; }
+	.eyebrow { margin: 0 0 5px; color: #6b6dcc; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+	h1 { margin: 0; color: #282943; font-size: 28px; }
+	.intro { margin: 10px 0 26px; color: #7d7e92; line-height: 1.7; }
+	form { display: grid; gap: 15px; text-align: left; }
+	label span { display: block; margin-bottom: 7px; color: #55566b; font-size: 13px; font-weight: 750; }
+	input { width: 100%; height: 46px; padding: 0 13px; border: 1px solid #dfe0ea; border-radius: 11px; outline: none; color: #292a43; background: white; }
+	input:focus { border-color: #7375d8; box-shadow: 0 0 0 3px rgba(115,117,216,.12); }
+	form button { height: 46px; margin-top: 4px; border: 0; border-radius: 11px; color: white; background: #5f61d1; box-shadow: 0 10px 22px rgba(95,97,209,.22); font-weight: 800; cursor: pointer; }
+	.error-message { margin: 0; padding: 10px 12px; border-radius: 9px; color: #a43f4b; background: #fff0f2; font-size: 12px; }
+	.setup-notice { padding: 18px; display: grid; gap: 7px; border: 1px solid #e6dca8; border-radius: 12px; color: #6c5b25; background: #fff9de; text-align: left; }
+	.setup-notice span { color: #7d7148; font-size: 13px; line-height: 1.65; }
+	.back-link { display: inline-block; margin-top: 24px; color: #6769c9; font-size: 13px; font-weight: 750; text-decoration: none; }
+	@media (max-width: 520px) { .login-card { padding: 32px 22px; } }
+</style>

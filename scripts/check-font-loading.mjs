@@ -1,9 +1,13 @@
+import { existsSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const distDir = resolve(projectRoot, "dist");
+const distRoot = resolve(projectRoot, "dist");
+const distDir = existsSync(resolve(distRoot, "client", "index.html"))
+	? resolve(distRoot, "client")
+	: distRoot;
 const MAX_CUSTOM_FONT_BYTES = 8 * 1024 * 1024;
 const ASTRO_ASSET_SEGMENT = "/_astro/";
 const FONT_REFERENCE_PATTERN =

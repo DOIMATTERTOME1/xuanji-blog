@@ -3,6 +3,7 @@ import { Font } from "astro:assets";
 import { PageProgressBar } from "@components/control/PageProgressBar";
 import Pio from "@components/features/pio/Pio.astro";
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
+import PublicRuntime from "@components/cms/PublicRuntime.astro";
 import MusicPlayer from "@components/widgets/music-player/MusicPlayer.svelte";
 import CodeGroupManager from "@/components/features/markdown/CodeGroupManager.astro";
 import DiagramManager from "@/components/features/markdown/DiagramManager.astro";
@@ -249,6 +250,7 @@ const bannerOffset =
 			duration={siteConfig.pageProgressBar?.duration ?? 8000}
 		/>
 		<slot />
+		<PublicRuntime />
 
 		<!-- Music Player - 核心始终加载（当enable=true），UI通过showFloatingPlayer控制 -->
 		<MusicPlayer client:idle />

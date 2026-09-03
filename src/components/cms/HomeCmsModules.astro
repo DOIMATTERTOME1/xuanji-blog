@@ -1,0 +1,69 @@
+<section id="cms-home-modules" aria-label="网站最新内容"></section>
+
+<script>
+	type Entry = { kind: string; title: string; slug: string; summary: string; cover_url?: string | null; published_at?: string };
+	type Item = { kind: string; title: string; data: Record<string, unknown> };
+	type Module = { id: string; label: string; enabled: boolean };
+
+	const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
+
+	function contentCard(entry: Entry) {
+		const label = entry.kind === "diary" ? "日记" : entry.kind === "study" ? "学习记录" : "技术文章";
+		return `<a class="cms-home-card" href="/writing/${encodeURIComponent(entry.slug)}/">${entry.cover_url ? `<img src="${escapeHtml(entry.cover_url)}" alt="">` : ""}<div><small>${label}</small><strong>${escapeHtml(entry.title)}</strong><p>${escapeHtml(entry.summary || "点击阅读全文")}</p></div></a>`;
+	}
+
+	function itemCard(item: Item) {
+		const cover = typeof item.data.coverUrl === "string" ? item.data.coverUrl : "";
+		const summary = typeof item.data.summary === "string" ? item.data.summary : typeof item.data.description === "string" ? item.data.description : "";
+		return `<article class="cms-home-card">${cover ? `<img src="${escapeHtml(cover)}" alt="">` : ""}<div><small>${item.kind === "anime" ? "追番" : item.kind === "project" ? "项目" : "公告"}</small><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(summary)}</p></div></article>`;
+	}
+
+	async function renderModules() {
+		const root = document.querySelector<HTMLElement>("#cms-home-modules");
+		if (!root) return;
+		try {
+			const [contentResponse, itemsResponse, settingsResponse] = await Promise.all([
+				fetch("/api/public/content/?limit=30"),
+				fetch("/api/public/items/"),
+				fetch("/api/public/settings/"),
+			]);
+			const contentResult = await contentResponse.json();
+			const itemsResult = await itemsResponse.json();
+			const settingsResult = await settingsResponse.json();
+			const entries: Entry[] = contentResult.entries ?? [];
+			const items: Item[] = itemsResult.items ?? [];
+			const configured: Module[] = settingsResult.settings?.home_modules?.items ?? [
+				{ id: "latest-posts", label: "最新文章", enabled: true }, { id: "study", label: "学习记录", enabled: true },
+				{ id: "diary", label: "最近日记", enabled: true }, { id: "projects", label: "项目展示", enabled: true }, { id: "anime", label: "追番动态", enabled: false },
+			];
+			const renderers: Record<string, () => string> = {
+				"latest-posts": () => entries.filter((entry) => entry.kind === "technical").slice(0, 4).map(contentCard).join(""),
+				study: () => entries.filter((entry) => entry.kind === "study").slice(0, 4).map(contentCard).join(""),
+				diary: () => entries.filter((entry) => entry.kind === "diary").slice(0, 4).map(contentCard).join(""),
+				projects: () => items.filter((item) => item.kind === "project").slice(0, 4).map(itemCard).join(""),
+				anime: () => items.filter((item) => item.kind === "anime").slice(0, 4).map(itemCard).join(""),
+			};
+			root.innerHTML = configured.filter((module) => module.enabled && renderers[module.id]).map((module) => {
+				const cards = renderers[module.id]();
+				return cards ? `<div class="cms-home-module" data-home-module="${module.id}"><div class="cms-module-heading"><h2>${escapeHtml(module.label)}</h2></div><div class="cms-home-grid">${cards}</div></div>` : "";
+			}).join("");
+		} catch { root.innerHTML = ""; }
+	}
+
+	renderModules();
+	document.addEventListener("swup:contentReplaced", renderModules);
+</script>
+
+<style is:global>
+	#cms-home-modules { display: grid; gap: 1rem; margin-bottom: 1rem; }
+	.cms-home-module { padding: 1.25rem; border-radius: var(--radius-large); background: var(--card-bg); box-shadow: var(--shadow); }
+	.cms-module-heading h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+	.cms-home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+	.cms-home-card { overflow: hidden; display: grid; grid-template-columns: 5.5rem 1fr; min-height: 6.5rem; border: 1px solid rgb(120 120 145 / .15); border-radius: .9rem; color: inherit; background: rgb(255 255 255 / .35); }
+	.cms-home-card img { width: 100%; height: 100%; object-fit: cover; }
+	.cms-home-card div { min-width: 0; padding: .8rem; }
+	.cms-home-card small { display: block; margin-bottom: .25rem; color: var(--primary); font-weight: 700; }
+	.cms-home-card strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+	.cms-home-card p { margin: .35rem 0 0; overflow: hidden; color: rgb(115 115 130); font-size: .86rem; white-space: nowrap; text-overflow: ellipsis; }
+	@media (max-width: 680px) { .cms-home-grid { grid-template-columns: 1fr; } }
+</style>

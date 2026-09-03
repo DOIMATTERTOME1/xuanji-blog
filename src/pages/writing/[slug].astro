@@ -1,0 +1,92 @@
+---
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { marked } from "marked";
+import sanitizeHtml from "sanitize-html";
+import katex from "katex";
+import "katex/dist/katex.css";
+
+import { demoContent } from "../../lib/cms/demo-data";
+import { createSupabasePublicClient } from "../../lib/supabase/public";
+
+export const prerender = false;
+
+const slug = Astro.params.slug ?? "";
+const supabase = createSupabasePublicClient();
+let entry = demoContent.find((item) => item.slug === slug && item.status === "published") ?? null;
+if (supabase) {
+	const { data } = await supabase
+		.from("content_entries")
+		.select("id,kind,title,slug,summary,body,cover_url,category,tags,published_at,updated_at")
+		.eq("slug", slug)
+		.eq("status", "published")
+		.maybeSingle();
+	entry = data as typeof entry;
+}
+if (!entry) return Astro.redirect("/404/");
+
+const mathFragments: string[] = [];
+const bodyWithMathTokens = entry.body
+	.replace(/\$\$([\s\S]+?)\$\$/g, (_match, formula: string) => {
+		const token = `KATEXBLOCKTOKEN${mathFragments.length}END`;
+		mathFragments.push(`<div class="cms-math-block">${katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })}</div>`);
+		return token;
+	})
+	.replace(/\$([^\n$]+?)\$/g, (_match, formula: string) => {
+		const token = `KATEXINLINETOKEN${mathFragments.length}END`;
+		mathFragments.push(katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false }));
+		return token;
+	});
+let bodyHtml = sanitizeHtml(marked.parse(bodyWithMathTokens) as string, {
+	allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "figure", "figcaption"]),
+	allowedAttributes: {
+		...sanitizeHtml.defaults.allowedAttributes,
+		img: ["src", "alt", "title", "loading"],
+		code: ["class"],
+	},
+	allowedSchemes: ["http", "https", "mailto"],
+});
+bodyHtml = bodyHtml.replace(/<p>KATEXBLOCKTOKEN(\d+)END<\/p>|KATEXINLINETOKEN(\d+)END/g, (_match, blockIndex?: string, inlineIndex?: string) => mathFragments[Number(blockIndex ?? inlineIndex)] ?? "");
+const kindLabel = entry.kind === "diary" ? "日记" : entry.kind === "study" ? "学习记录" : "技术文章";
+const publishedDate = new Date(entry.published_at ?? entry.updated_at);
+const wordCount = entry.body.replace(/\s/g, "").length;
+---
+
+<MainGridLayout
+	title={entry.title}
+	description={entry.summary}
+	postSlug={entry.slug}
+	coverImage={entry.cover_url ?? undefined}
+	publishedDate={publishedDate}
+	category={entry.category || kindLabel}
+	wordCount={wordCount}
+>
+	<article class="cms-article card-base overflow-hidden">
+		{entry.cover_url && <img class="cms-cover" src={entry.cover_url} alt={`${entry.title}的封面`} />}
+		<header>
+			<p class="eyebrow">{kindLabel}</p>
+			<h1>{entry.title}</h1>
+			{entry.summary && <p class="summary">{entry.summary}</p>}
+			<div class="meta"><span>{publishedDate.toLocaleDateString("zh-CN")}</span><span>{entry.category}</span><span>{wordCount} 字</span></div>
+			{entry.tags.length > 0 && <div class="tags">{entry.tags.map((tag) => <span>{tag}</span>)}</div>}
+		</header>
+		<div class="cms-body" set:html={bodyHtml} />
+	</article>
+</MainGridLayout>
+
+<style>
+	.cms-article { padding-bottom: 2.5rem; }
+	.cms-cover { width: 100%; max-height: 30rem; object-fit: cover; }
+	header { padding: 2.4rem 2.5rem 1.4rem; text-align: center; }
+	.eyebrow { margin: 0 0 .5rem; color: var(--primary); font-weight: 750; }
+	h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.22; }
+	.summary { max-width: 46rem; margin: 1rem auto 0; color: rgb(100 100 115); font-size: 1rem; line-height: 1.8; }
+	.meta, .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; }
+	.meta { margin-top: 1rem; color: rgb(120 120 135); font-size: .9rem; }
+	.tags { margin-top: .9rem; }
+	.tags span { padding: .28rem .65rem; border-radius: 999px; color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); font-size: .85rem; }
+	.cms-body { max-width: 50rem; margin: 0 auto; padding: 1rem 2.5rem; font-size: 1.05rem; line-height: 1.9; }
+	.cms-body :global(img) { max-width: 100%; height: auto; border-radius: 1rem; }
+	.cms-body :global(pre) { overflow-x: auto; padding: 1rem; border-radius: .8rem; }
+	.cms-body :global(.cms-math-block) { overflow-x: auto; margin: 1.4rem 0; padding: .5rem 0; text-align: center; }
+	@media (max-width: 640px) { header, .cms-body { padding-left: 1.25rem; padding-right: 1.25rem; } }
+</style>

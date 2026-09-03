@@ -135,6 +135,8 @@ export const navBarConfig: NavBarConfig = {
 			icon: "material-symbols:article",
 		},
 		LinkPreset.Projects,
+		LinkPreset.Diary,
+		LinkPreset.Anime,
 		LinkPreset.Archive,
 		LinkPreset.About,
 	],

@@ -1,0 +1,95 @@
+<script>
+	type NavItem = { label: string; url: string; enabled: boolean };
+	type PublicSettings = {
+		appearance?: { siteTitle?: string; subtitle?: string; themeHue?: number; desktopBanner?: string; mobileBanner?: string; wallpaperMode?: string };
+		profile?: { name?: string; bio?: string; avatar?: string; socialLinks?: { name: string; url: string }[] };
+		navigation?: { items?: NavItem[] };
+		home_modules?: { items?: { id: string; enabled: boolean }[] };
+	};
+
+	function safeText(selector: string, value?: string) {
+		if (!value) return;
+		const element = document.querySelector<HTMLElement>(selector);
+		if (element) element.textContent = value;
+	}
+
+	function renderNavigation(items: NavItem[]) {
+		const enabled = items.filter((item) => item.enabled);
+		const desktop = document.querySelector<HTMLElement>("#navbar-links-container");
+		if (desktop) {
+			desktop.innerHTML = enabled.map((item) => `<a class="runtime-nav-link" href="${encodeURI(item.url)}">${item.label.replace(/[<>]/g, "")}</a>`).join("");
+		}
+		const mobile = document.querySelector<HTMLElement>("#nav-menu-panel");
+		if (mobile) {
+			mobile.innerHTML = enabled.map((item) => `<a class="runtime-mobile-link" href="${encodeURI(item.url)}">${item.label.replace(/[<>]/g, "")}</a>`).join("");
+		}
+	}
+
+	function applySettings(settings: PublicSettings) {
+		const appearance = settings.appearance ?? {};
+		const profile = settings.profile ?? {};
+		if (typeof appearance.themeHue === "number") document.documentElement.style.setProperty("--hue", String(appearance.themeHue));
+		if (appearance.siteTitle) document.title = document.title.replace(/Xuanji's Blog/g, appearance.siteTitle);
+		safeText("#navbar-site-title", appearance.siteTitle);
+		safeText(".banner-title", appearance.siteTitle);
+		safeText(".banner-subtitle", appearance.subtitle);
+		safeText("#public-profile-name", profile.name);
+		safeText("#public-profile-bio", profile.bio);
+		const avatar = document.querySelector<HTMLImageElement>("#public-profile-card img");
+		if (avatar && profile.avatar) avatar.src = profile.avatar;
+		const banner = document.querySelector<HTMLImageElement>("#banner-wrapper img");
+		const selectedBanner = window.matchMedia("(max-width: 767px)").matches ? appearance.mobileBanner : appearance.desktopBanner;
+		if (banner && selectedBanner) banner.src = selectedBanner;
+		if (settings.navigation?.items) renderNavigation(settings.navigation.items);
+		for (const module of settings.home_modules?.items ?? []) {
+			document.querySelectorAll<HTMLElement>(`[data-home-module="${module.id}"]`).forEach((element) => {
+				element.hidden = !module.enabled;
+			});
+		}
+	}
+
+	async function loadPublicSettings() {
+		try {
+			const [response, announcementResponse] = await Promise.all([
+				fetch("/api/public/settings/", { headers: { Accept: "application/json" } }),
+				fetch("/api/public/items/?kind=announcement", { headers: { Accept: "application/json" } }),
+			]);
+			if (!response.ok) return;
+			const result = await response.json();
+			applySettings(result.settings ?? {});
+			const postData = document.querySelector<HTMLElement>("#page-overlay-data[data-is-post='true']");
+			if (postData && !location.pathname.startsWith("/writing/")) {
+				const slug = location.pathname.split("/").filter(Boolean).at(-1);
+				if (slug) {
+					const contentResponse = await fetch(`/api/public/content/?slug=${encodeURIComponent(slug)}&limit=1`);
+					const contentResult = await contentResponse.json();
+					if (contentResult.entries?.length) location.replace(`/writing/${encodeURIComponent(slug)}/`);
+				}
+			}
+			if (announcementResponse.ok) {
+				const announcementResult = await announcementResponse.json();
+				const announcement = announcementResult.items?.[0];
+				if (announcement) {
+					let bar = document.querySelector<HTMLElement>("#public-announcement");
+					if (!bar) {
+						bar = document.createElement("aside");
+						bar.id = "public-announcement";
+						document.body.prepend(bar);
+					}
+					bar.textContent = `📣 ${announcement.title}${announcement.data?.description ? `：${announcement.data.description}` : ""}`;
+				}
+			}
+		} catch { /* Keep the built-in site settings if the optional service is unavailable. */ }
+	}
+
+	loadPublicSettings();
+	document.addEventListener("swup:contentReplaced", loadPublicSettings);
+</script>
+
+<style is:global>
+	.runtime-nav-link { padding: .68rem .8rem; border-radius: .65rem; color: rgb(0 0 0 / .72); font-weight: 650; transition: background .18s ease; }
+	.runtime-nav-link:hover { background: var(--btn-plain-bg-hover); }
+	.runtime-mobile-link { display: block; padding: .65rem .8rem; border-radius: .55rem; color: rgb(0 0 0 / .7); font-weight: 650; }
+	#public-announcement { position: fixed; z-index: 80; right: 1rem; bottom: 1rem; max-width: min(26rem, calc(100vw - 2rem)); padding: .8rem 1rem; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: .85rem; color: var(--primary); background: color-mix(in srgb, var(--card-bg) 94%, transparent); box-shadow: 0 12px 34px rgb(20 20 45 / .18); backdrop-filter: blur(16px); font-size: .92rem; }
+	:global(.dark) .runtime-nav-link, :global(.dark) .runtime-mobile-link { color: rgb(255 255 255 / .78); }
+</style>

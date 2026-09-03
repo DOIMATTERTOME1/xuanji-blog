@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,7 +7,10 @@ const projectRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"..",
 );
-const distDirectory = path.join(projectRoot, "dist");
+const distRoot = path.join(projectRoot, "dist");
+const distDirectory = existsSync(path.join(distRoot, "client", "index.html"))
+	? path.join(distRoot, "client")
+	: distRoot;
 
 function getAttribute(tag, name) {
 	const match = tag.match(

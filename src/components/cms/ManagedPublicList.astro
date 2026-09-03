@@ -1,0 +1,71 @@
+---
+interface Props { mode: "diary" | "anime" | "project" }
+const { mode } = Astro.props;
+---
+
+<section class="managed-public-list card-base" data-managed-public-list={mode} hidden>
+	<div class="managed-list-heading"><span>{mode === "diary" ? "后台发布的日记" : mode === "project" ? "我的项目" : "我的追番记录"}</span><strong></strong></div>
+	<div class="managed-list-grid"></div>
+</section>
+
+<script>
+	type Entry = { title: string; slug: string; summary: string; body: string; cover_url?: string | null; published_at?: string };
+	type Item = { title: string; data: Record<string, unknown> };
+	const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
+
+	async function renderManagedLists() {
+		for (const root of document.querySelectorAll<HTMLElement>("[data-managed-public-list]")) {
+			const mode = root.dataset.managedPublicList;
+			try {
+				const response = await fetch(mode === "diary" ? "/api/public/content/?kind=diary" : `/api/public/items/?kind=${mode}`);
+				const result = await response.json();
+				const values: (Entry | Item)[] = mode === "diary" ? result.entries ?? [] : result.items ?? [];
+				if (!values.length) continue;
+				const grid = root.querySelector<HTMLElement>(".managed-list-grid");
+				const count = root.querySelector<HTMLElement>(".managed-list-heading strong");
+				if (count) count.textContent = `共 ${values.length} 条`;
+				if (grid) grid.innerHTML = values.map((value) => {
+					if (mode === "diary") {
+						const entry = value as Entry;
+						return `<a class="managed-entry" href="/writing/${encodeURIComponent(entry.slug)}/"><small>${entry.published_at ? new Date(entry.published_at).toLocaleDateString("zh-CN") : "日记"}</small><h2>${escapeHtml(entry.title)}</h2><p>${escapeHtml(entry.summary || entry.body.slice(0, 100))}</p></a>`;
+					}
+					const item = value as Item;
+					const cover = String(item.data.cover ?? item.data.image ?? "");
+					if (mode === "project") {
+						const link = String(item.data.visitUrl ?? item.data.link ?? "");
+						const content = `<article class="managed-project">${cover ? `<img src="${escapeHtml(cover)}" alt="">` : ""}<div><small>项目</small><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(String(item.data.description ?? ""))}</p></div></article>`;
+						return link ? `<a href="${escapeHtml(link)}" target="_blank" rel="noopener">${content}</a>` : content;
+					}
+					const progress = Number(item.data.progress ?? 0);
+					const total = Number(item.data.totalEpisodes ?? 0);
+					return `<article class="managed-anime">${cover ? `<img src="${escapeHtml(cover)}" alt="">` : ""}<div><small>${escapeHtml(String(item.data.watchStatus ?? "追番中"))}</small><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(String(item.data.description ?? ""))}</p><b>${total ? `进度 ${progress} / ${total}` : ""}</b></div></article>`;
+				}).join("");
+				root.hidden = false;
+				const legacy = document.querySelector<HTMLElement>(`#legacy-${mode}-content`);
+				if (legacy) legacy.hidden = true;
+			} catch { /* Existing local content remains visible as a safe fallback. */ }
+		}
+	}
+	renderManagedLists();
+	document.addEventListener("swup:contentReplaced", renderManagedLists);
+</script>
+
+<style is:global>
+	.managed-public-list { padding: 1.5rem; }
+	.managed-list-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+	.managed-list-heading span { font-size: 1.3rem; font-weight: 750; }
+	.managed-list-heading strong { color: var(--primary); font-size: .9rem; }
+	.managed-list-grid { display: grid; gap: 1rem; }
+	.managed-entry, .managed-anime, .managed-project { display: block; padding: 1.2rem; border: 1px solid rgb(120 120 145 / .16); border-radius: 1rem; color: inherit; background: rgb(255 255 255 / .32); }
+	.managed-entry small, .managed-anime small { color: var(--primary); font-weight: 700; }
+	.managed-entry h2, .managed-anime h2 { margin: .35rem 0; font-size: 1.25rem; }
+	.managed-entry p, .managed-anime p { margin: 0; color: rgb(110 110 125); line-height: 1.7; }
+	.managed-anime { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; }
+	.managed-anime img { width: 8rem; height: 11rem; object-fit: cover; border-radius: .7rem; }
+	.managed-anime b { display: block; margin-top: .8rem; color: var(--primary); }
+	.managed-project { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; }
+	.managed-project img { width: 8rem; height: 6rem; object-fit: cover; border-radius: .7rem; }
+	.managed-project h2 { margin: .3rem 0; font-size: 1.2rem; }
+	.managed-project p { margin: 0; color: rgb(110 110 125); }
+	@media (max-width: 560px) { .managed-anime { grid-template-columns: 5rem 1fr; } .managed-anime img { width: 5rem; height: 7rem; } }
+</style>
